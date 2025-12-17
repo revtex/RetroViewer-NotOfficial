@@ -64,6 +64,10 @@ check_database() {
                     echo
                     echo "Initializing database..."
                     python3 Utilities/setup_database.py
+                    if [ $? -ne 0 ]; then
+                        # Migration was cancelled or failed - exit to prompt
+                        exit 1
+                    fi
                     echo
                     read -p "Press Enter to continue..."
                     return 0

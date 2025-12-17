@@ -65,6 +65,10 @@ if (-not (Test-Path "Database\retroviewer.db")) {
                 Write-Host ""
                 Write-Host "Initializing database..." -ForegroundColor Green
                 python Utilities\setup_database.py
+                if ($LASTEXITCODE -ne 0) {
+                    # Migration was cancelled or failed - exit to prompt
+                    exit 1
+                }
                 Write-Host ""
                 Read-Host "Press Enter to continue"
             }

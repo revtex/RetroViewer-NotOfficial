@@ -156,7 +156,7 @@ def migrate_directory_structure():
     log_print("  Settings/     → Data/Settings/")
     log_print("  VideoFiles/   → Data/VideoFiles/")
     log_print("  MediaFiles/   → Data/MediaFiles/")
-    log_print("\nOld directories will be REMOVED after successful migration.")
+    log_print("\nOld directories and scripts will be ARCHIVED for safe keeping.")
     
     response = input("\nProceed with directory migration? (yes/no): ").strip().lower()
     if response not in ['yes', 'y']:
@@ -167,8 +167,17 @@ def migrate_directory_structure():
     os.makedirs(DATA_DIR, exist_ok=True)
     log_print(f"\n✓ Created Data/ directory at: {DATA_DIR}")
     
+    # Create timestamped archive directory first
+    archive_dir = os.path.join(BASE_DIR, "Archive")
+    os.makedirs(archive_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    archive_subdir = os.path.join(archive_dir, f"migration_{timestamp}")
+    os.makedirs(archive_subdir, exist_ok=True)
+    
+    log_print(f"\n✓ Created archive directory: {archive_subdir}")
+    
     migration_success = True
-    migrated_dirs = []
+    dirs_to_remove = []
     
     # Migrate each directory
     migrations = [
@@ -184,12 +193,16 @@ def migrate_directory_structure():
             try:
                 log_print(f"\nMigrating {name}...")
                 
-                # Check if destination already exists
+                # Step 1: Copy to archive
+                archive_path = os.path.join(archive_subdir, os.path.basename(old_path))
+                shutil.copytree(old_path, archive_path)
+                log_print(f"  ✓ Archived to: Archive/migration_{timestamp}/{os.path.basename(old_path)}/")
+                
+                # Step 2: Copy/merge to new Data/ location
                 if os.path.exists(new_path):
-                    log_print(f"  Warning: {new_path} already exists")
-                    log_print(f"  Merging contents from {old_path}...")
+                    log_print(f"  Warning: {new_path} already exists - merging contents")
                     
-                    # Copy files from old to new (merge)
+                    # Merge files
                     for item in os.listdir(old_path):
                         old_item_path = os.path.join(old_path, item)
                         new_item_path = os.path.join(new_path, item)
@@ -197,21 +210,23 @@ def migrate_directory_structure():
                         if os.path.isfile(old_item_path):
                             if not os.path.exists(new_item_path):
                                 shutil.copy2(old_item_path, new_item_path)
-                                log_print(f"    Copied: {item}")
+                                log_print(f"  ✓ Copied: {item}")
                             else:
-                                log_print(f"    Skipped (exists): {item}")
+                                log_print(f"  - Skipped (exists): {item}")
                         elif os.path.isdir(old_item_path):
                             if not os.path.exists(new_item_path):
                                 shutil.copytree(old_item_path, new_item_path)
-                                log_print(f"    Copied directory: {item}")
+                                log_print(f"  ✓ Copied directory: {item}")
                             else:
-                                log_print(f"    Skipped directory (exists): {item}")
+                                log_print(f"  - Skipped directory (exists): {item}")
                 else:
-                    # Move entire directory
+                    # Move to new location
                     shutil.move(old_path, new_path)
-                    log_print(f"  ✓ Moved: {old_path} → {new_path}")
+                    log_print(f"  ✓ Moved to: {new_path}")
+                    continue  # Skip adding to removal list since already moved
                 
-                migrated_dirs.append(old_path)
+                # Step 3: Mark for deletion (only if we copied, not moved)
+                dirs_to_remove.append(old_path)
                 
             except Exception as e:
                 log_print(f"  ✗ Error migrating {name}: {e}")
@@ -222,24 +237,45 @@ def migrate_directory_structure():
         log_print("Please review errors above before proceeding.")
         return False
     
-    # Remove old directories (only if they still exist and migration was successful)
+    # Remove old directories after successful archive and migration
     log_print("\n" + "=" * 60)
-    log_print("Cleaning up old directories...")
+    log_print("Removing old directories...")
     log_print("=" * 60)
     
-    for old_path in migrated_dirs:
+    for old_path in dirs_to_remove:
         if os.path.isdir(old_path):
             try:
-                # Check if directory is empty or can be safely removed
-                if not os.listdir(old_path):
-                    os.rmdir(old_path)
-                    log_print(f"✓ Removed empty directory: {old_path}")
-                else:
-                    # Directory still has content (shouldn't happen if move was successful)
-                    log_print(f"  Info: {old_path} still contains files - NOT removed")
-                    log_print(f"        You may want to verify and remove manually")
+                shutil.rmtree(old_path)
+                log_print(f"✓ Removed: {old_path}")
             except Exception as e:
                 log_print(f"  Warning: Could not remove {old_path}: {e}")
+    
+    # Archive and remove old Python scripts from root directory
+    log_print("\n" + "=" * 60)
+    log_print("Archiving old Python scripts...")
+    log_print("=" * 60)
+    
+    old_scripts = [
+        "FeaturePlayer.v2.py",
+        "Media Player.py",
+        "Meta Editor.v2.py",
+        "ReadFileName.py"
+    ]
+    
+    for script_name in old_scripts:
+        script_path = os.path.join(BASE_DIR, script_name)
+        if os.path.isfile(script_path):
+            try:
+                # Copy to archive
+                archive_path = os.path.join(archive_subdir, script_name)
+                shutil.copy2(script_path, archive_path)
+                log_print(f"✓ Archived: {script_name}")
+                
+                # Remove original
+                os.remove(script_path)
+                log_print(f"✓ Removed: {script_name}")
+            except Exception as e:
+                log_print(f"  Warning: Could not archive/remove {script_name}: {e}")
     
     log_print("\n" + "=" * 60)
     log_print("✓ Directory structure migration completed successfully!")
@@ -408,6 +444,9 @@ def migrate_playlists(conn, incremental=False):
     playlist_count = 0
     skipped_count = 0
     
+    # Track all missing videos per playlist for separate log file
+    all_missing_videos = {}
+    
     # Get existing playlists if incremental
     existing_playlists = set()
     if incremental:
@@ -417,6 +456,11 @@ def migrate_playlists(conn, incremental=False):
     for filename in sorted(os.listdir(PLAYLIST_DIR)):
         if filename.lower().endswith(".txt"):
             playlist_name = os.path.splitext(filename)[0]
+            
+            # Skip retired file_list playlist (replaced by All Videos)
+            if playlist_name == "file_list":
+                log_print(f"  Skipping retired playlist: {playlist_name}")
+                continue
             
             # Skip if already exists in incremental mode
             if incremental and playlist_name in existing_playlists:
@@ -461,6 +505,7 @@ def migrate_playlists(conn, incremental=False):
                             missing_videos.append(video_filename)
                 
                 if missing_videos:
+                    all_missing_videos[playlist_name] = missing_videos
                     log_print(f"  Info: {len(missing_videos)} videos in '{playlist_name}' not found (files not in VideoFiles/)")
                     if len(missing_videos) <= 3:
                         for vid in missing_videos:
@@ -474,10 +519,79 @@ def migrate_playlists(conn, incremental=False):
                 log_print(f"  Error reading playlist {filename}: {e}")
     
     conn.commit()
+    
+    # Write detailed missing videos report to separate file
+    if all_missing_videos:
+        missing_log_path = os.path.join(LOG_DIR, f"missing_videos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+        try:
+            with open(missing_log_path, 'w', encoding='utf-8') as f:
+                f.write("=" * 80 + "\n")
+                f.write("RetroViewer Migration - Missing Videos Report\n")
+                f.write("=" * 80 + "\n\n")
+                f.write("⚠️  IMPORTANT NOTES:\n")
+                f.write("• These videos were NOT added to the database during migration\n")
+                f.write("• Videos listed below were referenced in playlists but not found in VideoFiles/\n")
+                f.write("• To add these videos:\n")
+                f.write("  1. Place video files in Data/VideoFiles/ directory\n")
+                f.write("  2. Run Manager.py and use the Video Scanner tab to scan for new videos\n")
+                f.write("  3. Add scanned videos to playlists manually via Manager.py\n")
+                f.write("\n")
+                f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write("=" * 80 + "\n\n")
+                
+                total_missing = sum(len(videos) for videos in all_missing_videos.values())
+                f.write(f"Total Missing Videos: {total_missing}\n")
+                f.write(f"Playlists Affected: {len(all_missing_videos)}\n\n")
+                f.write("=" * 80 + "\n\n")
+                
+                for playlist_name, missing_videos in sorted(all_missing_videos.items()):
+                    f.write(f"Playlist: {playlist_name}\n")
+                    f.write(f"Missing: {len(missing_videos)} videos\n")
+                    f.write("-" * 80 + "\n")
+                    for video in missing_videos:
+                        f.write(f"  • {video}\n")
+                    f.write("\n")
+            
+            log_print(f"  📝 Detailed missing videos report: {missing_log_path}")
+        except Exception as e:
+            log_print(f"  Warning: Could not create missing videos report: {e}")
+    
     if incremental:
         log_print(f"✓ Processed {playlist_count + skipped_count} playlists: {playlist_count} new, {skipped_count} skipped")
     else:
         log_print(f"✓ Migrated {playlist_count} playlists")
+
+
+def create_all_videos_playlist(conn):
+    """Create/update the 'All Videos' playlist with all videos in the database."""
+    log_print("\nCreating 'All Videos' playlist...")
+    
+    cursor = conn.cursor()
+    
+    # Create or get the All Videos playlist
+    cursor.execute("""
+        INSERT OR IGNORE INTO playlists (name, description)
+        VALUES ('All Videos', 'Master playlist containing all videos in the library')
+    """)
+    
+    playlist_id = cursor.execute(
+        "SELECT id FROM playlists WHERE name = 'All Videos'"
+    ).fetchone()[0]
+    
+    # Clear existing entries (in case we're re-creating it)
+    cursor.execute("DELETE FROM playlist_videos WHERE playlist_id = ?", (playlist_id,))
+    
+    # Add all videos to the playlist
+    videos = cursor.execute("SELECT id FROM videos ORDER BY filename").fetchall()
+    
+    for position, (video_id,) in enumerate(videos, start=1):
+        cursor.execute("""
+            INSERT INTO playlist_videos (playlist_id, video_id, position)
+            VALUES (?, ?, ?)
+        """, (playlist_id, video_id, position))
+    
+    conn.commit()
+    log_print(f"✓ Created 'All Videos' playlist with {len(videos)} videos")
 
 
 def migrate_settings(conn, incremental=False):
@@ -755,26 +869,16 @@ def main():
         log_print("• Text files will be migrated to SQLite database")
         log_print("• Text files will remain as REFERENCE ONLY after migration")
         log_print("• DO NOT create new text files - use the database and GUI tools")
-        log_print("• Text file support will be REMOVED in future releases")
-        log_print("• You can re-run this script to re-import from text files if needed")
         log_print("=" * 60)
         
         log_print("\nThis script will:")
         log_print("  PHASE 1: Directory Structure Migration (if needed)")
-        log_print("    - Migrate Playlist/ → Data/Playlists/")
-        log_print("    - Migrate TimeStamps/ → Data/Timestamps/")
-        log_print("    - Migrate Settings/ → Data/Settings/")
-        log_print("    - Migrate VideoFiles/ → Data/VideoFiles/")
-        log_print("    - Migrate MediaFiles/ → Data/MediaFiles/")
-        log_print("    - Remove old directories after successful migration")
+        log_print("    - Migrate old directory structure to new Data/ layout")
+        log_print("    - Archive old directories for safe keeping")
         log_print("")
         log_print("  PHASE 2: Database Migration")
         log_print("    - Create/update SQLite database from schema")
-        log_print("    - Import videos from Data/VideoFiles/")
-        log_print("    - Import playlists from Data/Playlists/*.txt")
-        log_print("    - Import settings from Data/Settings/*.txt")
-        log_print("    - Import feature movies from Data/MediaFiles/")
-        log_print("    - Import timestamps from Data/Timestamps/*.txt")
+        log_print("    - Import videos, playlists, settings, and timestamps")
         log_print("    - Extract tags and genres from videos for management")
     
     # Check for --auto mode - skip all prompts for new installations
@@ -785,6 +889,7 @@ def main():
         # Import any existing data silently (shouldn't be any, but check anyway)
         migrate_videos(conn, incremental=False)
         migrate_playlists(conn, incremental=False)
+        create_all_videos_playlist(conn)  # Always create All Videos playlist
         migrate_settings(conn, incremental=False)
         migrate_feature_movies_and_timestamps(conn, incremental=False)
         migrate_tags_and_genres(conn)
@@ -802,16 +907,10 @@ def main():
     old_dirs = check_old_directory_structure()
     
     if old_dirs:
-        log_print("\n" + "=" * 60)
-        log_print("⚠️  OLD DIRECTORY STRUCTURE DETECTED")
-        log_print("=" * 60)
-        log_print(f"Found: {', '.join(old_dirs)}")
-        log_print("\nDirectory migration MUST be performed before database migration.")
-        log_print("Your files will be moved to the new Data/ structure.")
-        
         if not migrate_directory_structure():
             log_print("\n✗ Migration cancelled - directory structure not migrated")
-            return
+            close_log()
+            sys.exit(1)  # Exit with error code to stop launcher
     
     log_print("\n" + "=" * 60)
     log_print("STEP 2: Database Migration")
@@ -873,6 +972,7 @@ def main():
         
         migrate_videos(conn, incremental=(migration_mode == "incremental"))
         migrate_playlists(conn, incremental=(migration_mode == "incremental"))
+        create_all_videos_playlist(conn)  # Always create/update All Videos playlist
         migrate_settings(conn, incremental=(migration_mode == "incremental"))
         migrate_feature_movies_and_timestamps(conn, incremental=(migration_mode == "incremental"))
         
@@ -976,9 +1076,37 @@ def main():
         conn.close()
         close_log()
         
-        # Show log file location
+        # Move log files to Migration Logs folder
+        migration_logs_dir = os.path.join(BASE_DIR, "Migration Logs")
+        os.makedirs(migration_logs_dir, exist_ok=True)
+        
+        log_files_moved = []
+        
+        # Move main setup log
         if os.path.exists(LOG_FILE):
-            print(f"\n📝 Full log saved to: {LOG_FILE}")
+            new_log_path = os.path.join(migration_logs_dir, os.path.basename(LOG_FILE))
+            try:
+                shutil.move(LOG_FILE, new_log_path)
+                log_files_moved.append(new_log_path)
+            except Exception:
+                log_files_moved.append(LOG_FILE)  # Keep original path if move failed
+        
+        # Move missing videos log if it exists
+        for file in os.listdir(LOG_DIR):
+            if file.startswith("missing_videos_") and file.endswith(".txt"):
+                old_path = os.path.join(LOG_DIR, file)
+                new_path = os.path.join(migration_logs_dir, file)
+                try:
+                    shutil.move(old_path, new_path)
+                    log_files_moved.append(new_path)
+                except Exception:
+                    pass
+        
+        # Show log file locations
+        if log_files_moved:
+            print(f"\n📝 Migration logs saved to: {migration_logs_dir}")
+            for log_path in log_files_moved:
+                print(f"   • {os.path.basename(log_path)}")
 
 
 if __name__ == "__main__":

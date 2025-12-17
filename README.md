@@ -27,39 +27,45 @@
 ## Overview
 ```
 RetroViewer/
-├── Scripts/                    # All Python scripts
-│   ├── Manager.py             # Main management interface (5 tabs)
-│   ├── MediaPlayer.py         # Commercial player
-│   ├── FeaturePlayer.py       # Feature movies with commercial breaks
-│   └── db_helper.py           # Database operations
+├── Scripts/                     # All Python scripts
+│   ├── Manager.py               # Main management interface (7 tabs)
+│   ├── MediaPlayer.py           # Commercial player
+│   ├── FeaturePlayer.py         # Feature movies with commercial breaks
+│   ├── StreamServer.py          # IPTV/EPG streaming server
+│   └── db_helper.py             # Database operations
 │
-├── Utilities/                  # Utility scripts
+├── Utilities/                   # Utility scripts
 │   ├── install_dependencies.py  # Dependency installer
-│   └── setup_database.py        # Database setup & migration utility
+│   ├── setup_database.py        # Database setup & migration utility
+│   └── cache_durations.py       # Video duration caching utility
 │
-├── Data/                      # All data files
-│   ├── VideoFiles/           # Commercial video files (.mp4)
-│   ├── MediaFiles/           # Feature movie files (.mp4)
-│   ├── Playlists/            # [RETIRED] Old playlist text files
-│   ├── Settings/             # [RETIRED] Old settings text files
-│   └── Timestamps/           # [RETIRED] Old timestamp text files
+├── Data/                        # All user data files
+│   ├── VideoFiles/              # Commercial video files (.mp4)
+│   ├── MediaFiles/              # Feature movie files (.mp4)
+│   ├── Playlists/               # [RETIRED] Old playlist text files
+│   ├── Settings/                # [RETIRED] Old settings text files
+│   └── Timestamps/              # [RETIRED] Old timestamp text files
 │
-├── Database/                  # SQLite database
-│   ├── retroviewer.db        # Main database file
-│   └── database_schema.sql   # Schema definition
+├── Database/                    # SQLite database
+│   ├── retroviewer.db           # Main database file (REQUIRED)
+│   └── database_schema.sql      # Schema definition
 │
-├── Archive/                   # Archived standalone tools
-│   └── Standalone Tools/     # Tools now integrated into Manager
+├── Migration Logs/              # Migration log files
+│   ├── setup_database_*.log     # Main migration logs
+│   └── missing_videos_*.txt     # Missing video reports
 │
-├── Backups/                   # Backup directories (timestamped)
-├── Docs/                      # Documentation
-├── Video ZIPs/                # Source video archives
+├── Archive/                     # Archived files
+│   ├── migration_*/             # Old directories/scripts from migration
+│   └── Standalone Tools/        # Legacy standalone scripts
 │
-├── README.md                  # This file
-├── launch.sh                  # Launcher script (Linux/Mac)
-├── launch.bat                 # Launcher script (Windows Batch)
-├── launch.ps1                 # Launcher script (Windows PowerShell)
-└── requirements.txt           # Python dependencies
+├── Docs/                        # Documentation
+├── Docker/                      # Docker configuration for StreamServer
+│
+├── README.md                    # This file
+├── launch.sh                    # Launcher script (Linux/Mac)
+├── launch.bat                   # Launcher script (Windows Batch)
+├── launch.ps1                   # Launcher script (Windows PowerShell)
+└── requirements.txt             # Python dependencies
 ```
 
 ## Quick Start
@@ -138,7 +144,7 @@ python3 FeaturePlayer.py         # Feature movies with breaks
 For running the IPTV/EPG StreamServer in a container:
 
 ```bash
-cd docker
+cd Docker
 docker-compose up -d
 # Access at http://localhost:5000
 ```
@@ -177,7 +183,6 @@ Three launcher scripts are provided for easy access:
 ### Database
 - **Location**: `Database/retroviewer.db`
 - **Schema**: `Database/database_schema.sql`
-- **Backup**: Use `Backups/` directory for backups
 
 ### Playlists
 - **Storage**: Database (playlists and playlist_videos tables)
@@ -204,11 +209,11 @@ Text files are NO LONGER supported for automatic operations.
 **Migration happens automatically!** When you launch any player without a database, you'll be prompted:
 
 ```
-⚠️  WARNING: Database not found!
+⚠️  Database Setup Required
 RetroViewer requires a database to function.
 
 Options:
-  1) Run Migration Now
+  1) Initialize Database Now
   2) Cancel
 ```
 
@@ -218,17 +223,31 @@ python3 Utilities/setup_database.py
 ```
 
 This is a **ONE-TIME** process that:
-- Converts all playlist .txt files to database
-- Converts all timestamp .txt files to database
-- Converts all settings .txt files to database
-- After migration, **text files are NO LONGER USED**
+- **Phase 1: Directory Migration**
+  - Migrates old directory structure to new Data/ layout
+  - Archives old directories to Archive/migration_*/ folder
+  - Moves old Python scripts to archive
+- **Phase 2: Database Migration**
+  - Converts all playlist .txt files to database
+  - Converts all timestamp .txt files to database
+  - Converts all settings .txt files to database
+  - Creates "All Videos" master playlist
+  - Extracts tags and genres for filtering
+- **Phase 3: Cleanup**
+  - Moves log files to Migration Logs/ folder
+  - Creates detailed missing videos report
+  - After migration, **text files are NO LONGER USED**
 
 ### After Migration:
 - ✓ Database is the ONLY data source
 - ✓ Players read ONLY from database (no text file fallback)
-- ✓ Old .txt files can be safely deleted or archived
+- ✓ Old directories archived in Archive/migration_*/ folder
+- ✓ Old scripts archived (FeaturePlayer.v2.py, Media Player.py, etc.)
+- ✓ Migration logs saved to Migration Logs/ folder
+- ✓ Missing videos report generated for reference
 - ✓ Manager.py can still IMPORT from .txt files if needed (one-way)
 - ✗ System will NOT create or update .txt files automatically
+- ✗ file_list playlist retired (replaced by "All Videos")
 
 ## Path Updates
 
@@ -244,3 +263,5 @@ All scripts now reference:
 Standalone tools moved to `Archive/Standalone Tools/`:
 - Meta Editor.v2.py → Now in Manager.py (Video Metadata tab)
 - ReadFileName.py → Now in Manager.py (Video Scanner tab)
+- FeaturePlayer.v2.py → Updated copy now in Scripts/FeaturePlayer.py
+- Media Player.py → Update copy now in Scripts/MediaPlayer.py

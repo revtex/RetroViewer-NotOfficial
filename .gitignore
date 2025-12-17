@@ -81,14 +81,12 @@ backup/
 # ZIP archives
 *.zip
 
-# Text file exports
-Data/Playlists/*.txt
-Data/Timestamps/*.txt
-
-# Keep important structure files but ignore specific data
+# Data directories - all user content
+Data/Playlists/
+Data/Timestamps/
+Data/Settings/
 Data/VideoFiles/
 Data/MediaFiles/
-Video ZIPs/
 
-# But keep directory structure with .gitkeep files
-!**/.gitkeep
+# Video archives
+Video ZIPs/

@@ -61,6 +61,10 @@ if not exist "Database\retroviewer.db" (
             echo.
             echo Initializing database...
             python Utilities\setup_database.py
+            if errorlevel 1 (
+                REM Migration was cancelled or failed - exit to prompt
+                exit /b 1
+            )
             echo.
             pause
         ) else if "!db_choice!"=="2" (
