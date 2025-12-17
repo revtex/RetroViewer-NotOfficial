@@ -15,8 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy minimal requirements and install Python dependencies
-COPY docker/requirements.txt /app/docker/requirements.txt
-RUN pip install --no-cache-dir -r docker/requirements.txt
+COPY Docker/requirements.txt /app/Docker/requirements.txt
+RUN pip install --no-cache-dir -r Docker/requirements.txt
 
 # Copy only files needed for StreamServer
 COPY Scripts/StreamServer.py ./Scripts/

@@ -2,7 +2,7 @@ services:
   streamserver:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Docker/Dockerfile
     container_name: retroviewer-stream
     ports:
       - "5000:5000"
