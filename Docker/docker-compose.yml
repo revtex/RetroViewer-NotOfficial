@@ -1,8 +1,6 @@
 services:
   streamserver:
-    build:
-      context: ..
-      dockerfile: Docker/Dockerfile
+    image: ghcr.io/revtex/retroviewer-notofficial:latest
     container_name: retroviewer-stream
     ports:
       - "5000:5000"
