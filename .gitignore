@@ -81,12 +81,17 @@ backup/
 # ZIP archives
 *.zip
 
-# Data directories - all user content
-Data/Playlists/
-Data/Timestamps/
-Data/Settings/
-Data/VideoFiles/
-Data/MediaFiles/
+# Data directories - ignore content files but keep directory structure
+Data/Playlists/*
+Data/Timestamps/*
+Data/Settings/*
+Data/VideoFiles/*
+Data/MediaFiles/*
+!Data/Playlists/.gitkeep
+!Data/Timestamps/.gitkeep
+!Data/Settings/.gitkeep
+!Data/VideoFiles/.gitkeep
+!Data/MediaFiles/.gitkeep
 
 # Video archives
 Video ZIPs/

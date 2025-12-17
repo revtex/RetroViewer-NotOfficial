@@ -1,0 +1,2 @@
+# This file ensures the Timestamps directory is tracked by git
+# RetroViewer will store timestamp text files here (for import/export)

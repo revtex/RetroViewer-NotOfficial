@@ -98,6 +98,26 @@ def close_log():
         log_print("=" * 60, to_console=False)
         log_print(f"Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", to_console=False)
         _log_file.close()
+
+
+def create_data_directory_structure():
+    """Create complete Data/ directory structure for new installations."""
+    log_print("\nCreating Data/ directory structure...")
+    
+    directories = [
+        (DATA_DIR, "Data/"),
+        (VIDEO_FOLDER, "Data/VideoFiles/"),
+        (MEDIA_FOLDER, "Data/MediaFiles/"),
+        (PLAYLIST_DIR, "Data/Playlists/"),
+        (TIMESTAMPS_DIR, "Data/Timestamps/"),
+        (SETTINGS_DIR, "Data/Settings/"),
+    ]
+    
+    for dir_path, display_name in directories:
+        os.makedirs(dir_path, exist_ok=True)
+        log_print(f"  ✓ Created {display_name}")
+    
+    log_print("✓ Data directory structure ready")
         _log_file = None
 
 
@@ -163,9 +183,8 @@ def migrate_directory_structure():
         log_print("✗ Directory migration cancelled by user")
         return False
     
-    # Create Data/ directory if it doesn't exist
-    os.makedirs(DATA_DIR, exist_ok=True)
-    log_print(f"\n✓ Created Data/ directory at: {DATA_DIR}")
+    # Create Data/ directory structure if it doesn't exist
+    create_data_directory_structure()
     
     # Create timestamped archive directory first
     archive_dir = os.path.join(BASE_DIR, "Archive")
@@ -883,6 +902,9 @@ def main():
     
     # Check for --auto mode - skip all prompts for new installations
     if auto_mode and new_install:
+        # Create directory structure for new installation
+        create_data_directory_structure()
+        
         # Silent auto-create for new installations
         conn = init_database()
         
@@ -950,7 +972,11 @@ def main():
     schema_path = os.path.join(BASE_DIR, "Database", "database_schema.sql")
     if not os.path.exists(schema_path):
         log_print(f"\n✗ Error: Schema file not found at {schema_path}")
-        log_print("Cannot proceed without database schema.")
+      Ensure Data/ directory structure exists (for new installs or upgrades)
+    if new_install or not os.path.exists(DATA_DIR):
+        create_data_directory_structure()
+    
+    #   log_print("Cannot proceed without database schema.")
         return
     
     # Initialize database (creates new or opens existing)

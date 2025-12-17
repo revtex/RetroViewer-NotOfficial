@@ -1,0 +1,2 @@
+# This file ensures the Playlists directory is tracked by git
+# RetroViewer will store playlist text files here (for import/export)

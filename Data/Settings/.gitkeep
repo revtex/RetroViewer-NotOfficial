@@ -1,0 +1,2 @@
+# This file ensures the Settings directory is tracked by git
+# RetroViewer will store settings text files here (legacy format)

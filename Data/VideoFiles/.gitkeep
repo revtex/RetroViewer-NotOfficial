@@ -1,0 +1,3 @@
+# This file ensures the VideoFiles directory is tracked by git
+# Place your commercial video files (.mp4) here
+# Note: Video files are not tracked by git due to their size
