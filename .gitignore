@@ -1,0 +1,94 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDEs
+.vscode/settings.json
+.vscode/launch.json
+*.swp
+*.swo
+*~
+.idea/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# SQLite databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Video files (large media)
+*.mp4
+*.avi
+*.mkv
+*.mov
+*.wmv
+*.flv
+*.webm
+*.m4v
+
+# Backup directories
+Backups/
+backups/
+backup/
+*.backup
+*.bak
+*.old
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# ZIP archives
+*.zip
+
+# Text file exports
+Data/Playlists/*.txt
+Data/Timestamps/*.txt
+
+# Keep important structure files but ignore specific data
+Data/VideoFiles/
+Data/MediaFiles/
+Video ZIPs/
+
+# But keep directory structure with .gitkeep files
+!**/.gitkeep

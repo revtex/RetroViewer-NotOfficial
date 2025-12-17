@@ -1,0 +1,6 @@
+# RetroViewer StreamServer - Minimal Requirements
+# Only includes dependencies needed for StreamServer.py
+
+# HTTP streaming server
+flask>=3.0.0
+waitress>=3.0.0

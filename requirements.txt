@@ -1,0 +1,15 @@
+# RetroViewer Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Video playback
+python-vlc>=3.0.0
+
+# MP4 metadata handling
+mutagen>=1.47.0
+
+# GUI theme
+ttkbootstrap>=1.10.0
+
+# HTTP streaming server (StreamServer.py)
+flask>=3.0.0
+waitress>=3.0.0

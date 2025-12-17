@@ -1,0 +1,82 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+dist
+build
+*.egg
+.pytest_cache
+.coverage
+htmlcov
+
+# Virtual environments
+venv
+env
+ENV
+.venv
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Backups and archives
+Backups/
+Archive/
+
+# Documentation
+Docs/
+
+# Video ZIPs (extract before building)
+Video ZIPs/
+
+# Data directory (volumes will mount this, don't copy to image)
+Data/VideoFiles/
+Data/MediaFiles/
+Data/Playlists/
+Data/Timestamps/
+Data/Settings/
+
+# Database (volume will mount this, don't copy to image)
+Database/retroviewer.db
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Files not needed in container
+launch.sh
+launch.bat
+launch.ps1
+README.md
+requirements.txt
+
+# GUI scripts (not needed for StreamServer)
+Scripts/Manager.py
+Scripts/Media\ Player.py
+Scripts/FeaturePlayer.v2.py
+Scripts/__pycache__
+
+# Utilities not needed for runtime
+Utilities/install_dependencies.py
+Utilities/__pycache__
